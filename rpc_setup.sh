@@ -166,6 +166,7 @@ function remove_rs485_driver() {
 
 function configure_i2c_support() {
 
+	# first check if the i2c already exists
 	local i2c_device
 
 	if [ $revision == 1 ] ; then
@@ -178,9 +179,46 @@ function configure_i2c_support() {
 		echo "i2c already configured"
 	else
 		echo "configuring i2c"
+
+		# install the i2c-tools
+		apt-get install i2c-tools
+
+		# check if i2c_bcm2708 is already added to /etc/modules
+		installed=`cat /etc/modules | grep i2c_bcm2708 -c`
+		if [ $installed = 0 ] ; then
+			# if not, add i2c_bcm2708 to /etc/modules
+			echo "adding i2c_bcm2708 module to startup"	
+			echo "i2c_bcm2708" >> /etc/modules
+		else
+			echo "i2c_bcm2708 already added to /etc/modules"
+		fi
+
+		# load the module
+		modprobe i2c-bcm2708
+	
 	fi
 
+}
 
+function configure_rtc() {	
+
+	local i2c_device
+	if [ $revision == 1 ] ; then
+		i2c_device="/sys/class/i2c-adapter/i2c-0/new_device"
+	else
+		i2c_device="/sys/class/i2c-adapter/i2c-1/new_device"
+	fi
+
+	if [ ! -e $i2c_device ]; then
+		echo "i2c support not configured!"
+	else
+
+		echo "configuring real time clock..."
+		# enable rtc clock
+		echo ds1307 0x68 > $i2c_device	
+
+	fi
+	
 }
 
 function enter_to_continue() {
@@ -198,10 +236,11 @@ function print_menu() {
 	echo "[2]...configure the joystick gpios"
 	echo "[3]...configure the outputs"
 	echo "[4]...configure the i2c support"
+	echo "[5]...configure real time clock"
 	echo "---------------------------------"	
-	echo "[5]...remove the rs-485 device driver"
-	echo "[6]...free the joystick gpios"
-	echo "[7]...free the outputs"
+	echo "[6]...remove the rs-485 device driver"
+	echo "[7]...free the joystick gpios"
+	echo "[8]...free the outputs"
 	echo "---------------------------------"		
 	echo "[q]uit setup"
 	echo "[c]hange revision"
@@ -247,17 +286,22 @@ function main_repl {
 			enter_to_continue;
 			;;
 
-			"5") # remove rs485 device driver
+			"5") # configure real time clock
+			configure_rtc;
+			enter_to_continue;
+			;;
+
+			"6") # remove rs485 device driver
 			remove_rs485_driver;
 			enter_to_continue;
 			;;
 
-			"6") # remove joystick
+			"7") # remove joystick
 			unexport_joystick_gpio;
 			enter_to_continue;
 			;;
 
-			"7") # remove outputs
+			"8") # remove outputs
 			unexport_outputs;
 			enter_to_continue;
 			;;
@@ -281,30 +325,8 @@ function main() {
 	# print some general info about the script
   print_info;
 
+  # enter the main loop
   main_repl;
-
-	# # ask the user if we should install the raspicomm device driver
- #  confirmationtext="Do you want to install the raspicomm rs485 driver?"
- #  ask_confirmation;
- #  if [ $confirmed == 1 ]; then		 
-	# 	install_rs485_driver; # install the driver
- #  fi
-
- #  # ask the user for the revision of the raspberry pi
- #  read_revision;
-
-	# # ask the user if we should install and enable the i2c support
-
-	# # ask the user if we should export the joystick gpios
-	# confirmationtext="Do you want to export the joystick gpios?"
-	# ask_confirmation;
-	# if [ $confirmed == 1]; then
-	# 	export_joystick_gpio; #export the gpios
-	# fi
-
-	# # ask the user if we should export the gpios 
-
-	echo "setup finished...";
 }
 
 main; # entrypoint
