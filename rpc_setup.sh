@@ -200,6 +200,86 @@ function configure_i2c_support() {
 
 }
 
+
+autostart_file="/etc/init.d/rpc.sh"
+
+function create_autostart() {
+
+	# truncate/create the empty autostart file
+	> ${autostart_file}
+
+	echo "#!/bin/bash" >> ${autostart_file}
+
+	echo >> ${autostart_file}
+	echo >> ${autostart_file}
+	
+	echo "### BEGIN INIT INFO"  >> ${autostart_file}
+	echo "# Provides: rpc"  >> ${autostart_file}
+	echo "# Required-Start:    $remote_fs $syslog" >> ${autostart_file}
+	echo "# Required-Stop:     $local_fs" >> ${autostart_file}
+	echo "# Default-Start:     2 3 4 5" >> ${autostart_file}
+	echo "# Default-Stop:" >> ${autostart_file}
+	echo "# Short-Description: Creates the real time clock i2c device and configures the rpc gpios" >> ${autostart_file}
+	echo "### END INIT INFO" >> ${autostart_file}
+
+	# add real time clock configuration to autostart file
+	if [ ${revision} == 1 ]; then
+		echo "echo ds1307 0x68 > /sys/class/i2c-adapter/i2c-0/new_device" >> ${autostart_file}
+	else
+		echo "echo ds1307 0x68 > /sys/class/i2c-adapter/i2c-1/new_device" >> ${autostart_file}
+	fi
+
+	# add joystick gpio configuration to autostart file
+	echo "echo  4 > /sys/class/gpio/export" >> ${autostart_file}
+	echo "echo 22 > /sys/class/gpio/export" >> ${autostart_file}
+	echo "echo 23 > /sys/class/gpio/export" >> ${autostart_file}
+	echo "echo 24 > /sys/class/gpio/export" >> ${autostart_file}
+	echo "echo 25 > /sys/class/gpio/export" >> ${autostart_file}
+	echo "echo in > /sys/class/gpio/gpio4/direction" >> ${autostart_file}
+	echo "echo in > /sys/class/gpio/gpio22/direction" >> ${autostart_file}
+	echo "echo in > /sys/class/gpio/gpio23/direction" >> ${autostart_file}
+	echo "echo in > /sys/class/gpio/gpio24/direction" >> ${autostart_file}
+	echo "echo in > /sys/class/gpio/gpio25/direction" >> ${autostart_file}
+
+	# add output gpio configuration to autostart file
+	echo "echo 18 > /sys/class/gpio/export" >> ${autostart_file}
+	echo "echo out > /sys/class/gpio/gpio18/direction" >> ${autostart_file}
+	if [ ${revision} == 1 ]; then
+		echo "echo 21 > /sys/class/gpio/export" >> ${autostart_file}
+		echo "echo out > /sys/class/gpio/gpio21/direction" >> ${autostart_file}
+	else
+		echo "echo 27 > /sys/class/gpio/export" >> ${autostart_file}
+		echo "echo out > /sys/class/gpio/gpio27/direction" >> ${autostart_file}
+	fi
+
+	# make the file executable
+	chmod +x ${autostart_file}
+
+	# set the script to autostart
+	update-rc.d rpc.sh start 80 2 3 4 5
+}
+
+function remove_autostart() {
+	update-rc.d rpc.sh remove
+	rm ${autostart_file}
+}
+
+function install_all() {
+	install_rs485_driver;
+	export_joystick_gpio;
+	export_outputs;
+	configure_i2c_support;
+	configure_rtc;
+	create_autostart;
+}
+
+function remove_all() {
+	remove_rs485_driver;
+	unexport_joystick_gpio;
+	unexport_outputs;
+	remove_autostart;
+}
+
 function configure_rtc() {	
 
 	local i2c_device
@@ -215,7 +295,7 @@ function configure_rtc() {
 
 		echo "configuring real time clock..."
 		# enable rtc clock
-		echo ds1307 0x68 > $i2c_device	
+		echo ds1307 0x68 > ${i2c_device}
 
 	fi
 	
@@ -232,18 +312,11 @@ function print_menu() {
 	echo "================================="
 	echo "Raspberry Pi Revision: $revision"  # show the currently selected rpi revision
 	echo "----------------------------------"
-	echo "[1]...install rs-485 device driver (/dev/ttyRPC0)"
-	echo "[2]...configure the joystick gpios"
-	echo "[3]...configure the outputs"
-	echo "[4]...configure the i2c support"
-	echo "[5]...configure real time clock"
-	echo "---------------------------------"	
-	echo "[6]...remove the rs-485 device driver"
-	echo "[7]...free the joystick gpios"
-	echo "[8]...free the outputs"
+	echo "[c]hange revision"
+	echo "[i]nstall"
+	echo "[r]remove"
 	echo "---------------------------------"		
 	echo "[q]uit setup"
-	echo "[c]hange revision"
 	echo "================================="
 	echo -n "Enter command: ";
 }
@@ -266,44 +339,14 @@ function main_repl {
 			stop=1
 			;;
 
-			"1") # install rs-485 device driver
-			install_rs485_driver;
-			enter_to_continue;
-			;;
-	
-			"2") # joystick
-			export_joystick_gpio;
-			enter_to_continue;
+			"r") # remove
+			remove_all;
+			stop=1
 			;;
 
-			"3") # outputs
-			export_outputs;
-			enter_to_continue;
-			;;
-
-			"4") # configure i2c support
-			configure_i2c_support;
-			enter_to_continue;
-			;;
-
-			"5") # configure real time clock
-			configure_rtc;
-			enter_to_continue;
-			;;
-
-			"6") # remove rs485 device driver
-			remove_rs485_driver;
-			enter_to_continue;
-			;;
-
-			"7") # remove joystick
-			unexport_joystick_gpio;
-			enter_to_continue;
-			;;
-
-			"8") # remove outputs
-			unexport_outputs;
-			enter_to_continue;
+			"i") # install
+			install_all;
+			stop=1
 			;;
 
 			"c") # toggle the revision
