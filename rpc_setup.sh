@@ -304,6 +304,8 @@ function configure_rtc() {
 # configures the raspberry pi to not use the rs232 for startup logging
 function configure_rs232() {
 
+	local reboot_required=0
+
 	# we need to remove all references of /dev/ttyAMA0 from /boot/cmdline.txt and /etc/inittab so that the rs232 device becomes usable
 
 	local file1="/boot/cmdline.txt"
@@ -320,45 +322,64 @@ function configure_rs232() {
 		echo "OK."
 		echo "creating backup ${file1}.bak..."
 		mv ${file1} ${file1}.bak
-
 		if [ $? == 0 ]; then			
 			echo -n "updating file..."
 			echo "${file1_replacement}" > ${file1}
-
 			if [ $? == 0 ]; then
 				echo "OK."
+				reboot_required=1
 			else
 				echo "ERROR."
 				echo "restoring backup"
 				mv ${file1}.bak ${file1}
 			fi		
 		fi
-
 	elif [ "${file1_content_live}" == "${file1_replacement}" ]; then
 		echo "ALREADY PATCHED."
 	else
 		echo "UNKNOWN."
-		echo "aborted patching aborting"
+		echo "aborted patching file"
 	fi
 
 	local file2="/etc/inittab"
 	local line2="T0:23:respawn:/sbin/getty -L ttyAMA0 115200 vt100"
 	local line2_replacement="# T0:23:respawn:/sbin/getty -L ttyAMA0 115200 vt100"
 
-	# installed=`cat /etc/modules | grep i2c_bcm2708 -c`
-	# file2 
-	# if [ ${file2_}]
+	# get the linenumber
+	echo -n "checking ${file2}..."
+	local linenumber=`cat "${file2}" | grep -nx "T0:23:respawn:/sbin/getty -L ttyAMA0 115200 vt100" | sed -n 's/^\([0-9]*\)[:].*/\1/p'`
+	if [ "${linenumber}" == "72" ]; then
+		echo "OK."
+		echo "creating backup ${file2}.bak..."
+		cp ${file2} ${file2}.bak
+		if [ $? == 0 ]; then
+			echo -n "updating file..."
+			sed -i '72s/.*/# T0:23:respawn:\/sbin\/getty -L ttyAMA0 115200 vt100/' /etc/inittab
 
+			if [ $? == 0 ]; then
+				echo "OK.";
+				reboot_required=1
+			else
+				echo "ERROR."
+				echo "restoring backup"
+				mv ${file2}.bak ${file2}
+			fi
+		fi
+	else
+		local linenumber_patched=`cat "${file2}" | grep -nx "# T0:23:respawn:/sbin/getty -L ttyAMA0 115200 vt100" | sed -n 's/^\([0-9]*\)[:].*/\1/p'`
+		if [ ${linenumber_patched} == 72 ]; then
+			echo "ALREADY PATCHED."
+		else
+			echo "UNKNOWN."
+			echo "aborted patching file"		
+		fi
+	fi
 
-	# update /boot/cmdline.txt
-	# check if the file's contents are as we expect
-	# create a backup
-	# inform the user what happened
+	# inform the use that a reboot is required
+	if [ $reboot_required == 1 ]; then
+		echo "startup files patched -> reboot required to use rs-232 port"
+	fi
 
-	# update /etc/inittab
-	# check if the file's contents are as we expect
-	# create a backup
-	# inform the user what happened
 }
 
 function enter_to_continue() {
