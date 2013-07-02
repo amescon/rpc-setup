@@ -163,7 +163,6 @@ function remove_rs485_driver() {
 	apt-get remove raspicommrs485-$(uname  -r)
 }
 
-
 function configure_i2c_support() {
 
 	# first check if the i2c already exists
@@ -270,6 +269,7 @@ function install_all() {
 	export_outputs;
 	configure_i2c_support;
 	configure_rtc;
+	configure_rs232;
 	create_autostart;
 }
 
@@ -299,6 +299,66 @@ function configure_rtc() {
 
 	fi
 	
+}
+
+# configures the raspberry pi to not use the rs232 for startup logging
+function configure_rs232() {
+
+	# we need to remove all references of /dev/ttyAMA0 from /boot/cmdline.txt and /etc/inittab so that the rs232 device becomes usable
+
+	local file1="/boot/cmdline.txt"
+	local file1_content="dwc_otg.lpm_enable=0 console=ttyAMA0,115200 kgdboc=ttyAMA0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline rootwait"
+	local file1_replacement="dwc_otg.lpm_enable=0 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline rootwait"
+
+	echo -n "checking ${file1}..."
+
+	# load the file
+	local file1_content_live=$(<${file1})
+
+	# if the contents match, backup and replace the file
+	if [ "${file1_content_live}" == "${file1_content}" ]; then 
+		echo "OK."
+		echo "creating backup ${file1}.bak..."
+		mv ${file1} ${file1}.bak
+
+		if [ $? == 0 ]; then			
+			echo -n "updating file..."
+			echo "${file1_replacement}" > ${file1}
+
+			if [ $? == 0 ]; then
+				echo "OK."
+			else
+				echo "ERROR."
+				echo "restoring backup"
+				mv ${file1}.bak ${file1}
+			fi		
+		fi
+
+	elif [ "${file1_content_live}" == "${file1_replacement}" ]; then
+		echo "ALREADY PATCHED."
+	else
+		echo "UNKNOWN."
+		echo "aborted patching aborting"
+	fi
+
+	local file2="/etc/inittab"
+	local line2="T0:23:respawn:/sbin/getty -L ttyAMA0 115200 vt100"
+	local line2_replacement="# T0:23:respawn:/sbin/getty -L ttyAMA0 115200 vt100"
+
+	# installed=`cat /etc/modules | grep i2c_bcm2708 -c`
+	# file2 
+	# if [ ${file2_}]
+
+
+	# update /boot/cmdline.txt
+	# check if the file's contents are as we expect
+	# create a backup
+	# inform the user what happened
+
+	# update /etc/inittab
+	# check if the file's contents are as we expect
+	# create a backup
+	# inform the user what happened
 }
 
 function enter_to_continue() {
@@ -363,13 +423,43 @@ function main_repl {
 
 }
 
+function parseArgument() {
+	local arg=$1
+
+  if [ ${arg:0:1} = '/' ]; then # strip leading '/'
+    local arg=${arg:1}
+  elif [ ${arg:0:2} = '--' ]; then # strip leading '--'
+    local arg=${arg:2}
+  fi
+
+  local name=${arg%%=*}  # extract parameter name
+  local value=${arg##*=} # extract parameter value
+
+  case $name in
+  	"configure-rs232"|"rs232") # configure rs232
+			configure_rs232;
+  	;;
+  esac
+}
+
 function main() {
 
 	# print some general info about the script
   print_info;
 
-  # enter the main loop
-  main_repl;
+  # check if arguments were supplied
+  if [[ -z $1 ]]; then
+	  # enter the main loop
+	  main_repl;
+	else
+
+		# execute the supplied arguments
+		for arg in "$@"
+		do
+			parseArgument $arg;
+		done
+
+	fi
 }
 
-main; # entrypoint
+main $*; # entrypoint
