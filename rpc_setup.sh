@@ -228,6 +228,9 @@ function create_autostart() {
 		echo "echo ds1307 0x68 > /sys/class/i2c-adapter/i2c-1/new_device" >> ${autostart_file}
 	fi
 
+	# add rtc time -> sys time to autostart file
+	echo "hwclock --hctosys" >> ${autostart_file}
+
 	# add joystick gpio configuration to autostart file
 	echo "echo  4 > /sys/class/gpio/export" >> ${autostart_file}
 	echo "echo 22 > /sys/class/gpio/export" >> ${autostart_file}
