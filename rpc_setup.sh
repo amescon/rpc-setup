@@ -204,6 +204,8 @@ autostart_file="/etc/init.d/rpc.sh"
 
 function create_autostart() {
 
+	echo "creating autostart file ${autostart_file}"
+
 	# truncate/create the empty autostart file
 	> ${autostart_file}
 
@@ -263,6 +265,7 @@ function create_autostart() {
 
 function remove_autostart() {
 	update-rc.d rpc.sh remove
+	echo "removing autostart file ${autostart_file}"
 	rm ${autostart_file}
 }
 
@@ -447,6 +450,32 @@ function main_repl {
 
 }
 
+function print_help() {
+	echo "rpc_setup.sh supports the following parameters:"
+	echo
+	echo "help|h|?............this output"
+	echo "revision1|rev1......consider the raspberry pi to be revision 1"
+	echo "                    must be specified before all other arguments"
+	echo "configure-rs232.....modifies /etc/inittab and /boot/cmdline.txt"
+	echo "                    to not use /dev/ttyAMA0"
+	echo "configure-i2c.......installs i2c support"
+	echo "configure-rtc.......configures the real time clock"
+	echo "install-rs485.......installs the rs485 device driver"
+	echo "export-joystick.....exports the gpios used by the joystick"
+	echo "export-outputs......exports the gpios used as outputs"
+	echo "unexport-joystick...unexports the gpios used by the joystick"
+	echo "unexport-outputs....unexports the gpios used as outputs"
+	echo "create-autostart....creates and registers an autostart script that"
+	echo "                    configures the rtc and gpios on startup"
+	echo "remove-autostart....removes the autostart script"
+	echo
+	echo "example: sudo ./rpc_setup.sh --configure-rs232"
+	echo
+	echo "when no arguments are supplied, starts in interactive mode"
+	echo "hint: you need to have root access for most actions"
+	echo
+}
+
 function parseArgument() {
 	local arg=$1
 
@@ -460,9 +489,56 @@ function parseArgument() {
   local value=${arg##*=} # extract parameter value
 
   case $name in
+
+		"revision1"|"rev1"|"r1") # use revision 1
+			echo "now considering raspberry pi revision 1"
+			revision=1;
+		;;
+
   	"configure-rs232"|"rs232") # configure rs232
 			configure_rs232;
   	;;
+
+  	"configure-i2c"|"i2c") # configure i2c
+			configure_i2c_support;
+		;;
+
+		"configure-rtc"|"rtc") # configure rtc
+			configure_rtc;
+		;;
+
+		"install-rs485"|"rs485") # install rs-485 driver
+			install_rs485_driver;
+		;;
+
+		"export-joystick") # export joystick gpios
+			export_joystick_gpio;
+		;;
+
+		"export-outputs") # export outputs
+			export_outputs;
+		;;
+
+		"unexport-joystick") # unexport joystick gpios
+			unexport_joystick_gpio;
+		;;
+
+		"unexport-outputs") # unexport outputs
+			unexport_outputs;
+		;;
+
+		"create-autostart") # create the autostart script
+			create_autostart;
+		;;
+
+		"remove-autostart") # remove the autostart script
+			remove_autostart;
+		;;
+
+		"help"|"h"|"?") # help
+			print_help;
+		;;
+
   esac
 }
 
