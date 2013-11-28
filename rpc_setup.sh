@@ -577,20 +577,27 @@ function main() {
 	# print some general info about the script
   print_info;
 
-  # sets the package name
-  set_package;
+  # check if this script is run as root
+  if [[ $EUID -ne 0 ]]; then
+  	echo "This script must be run as root. Try 'sudo rpc-setup.sh'."
+  else
 
-  # check if arguments were supplied
-  if [[ -z $1 ]]; then
-	  # enter the main loop
-	  main_repl;
-	else
+	  # sets the package name
+	  set_package;
 
-		# execute the supplied arguments
-		for arg in "$@"
-		do
-			parseArgument $arg;
-		done
+	  # check if arguments were supplied
+	  if [[ -z $1 ]]; then
+		  # enter the main loop
+		  main_repl;
+		else
+
+			# execute the supplied arguments
+			for arg in "$@"
+			do
+				parseArgument $arg;
+			done
+
+		fi
 
 	fi
 }
