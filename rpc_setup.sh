@@ -8,6 +8,28 @@ revision=2
 
 confirmationtext="[Question]" # used by confirm
 confirmed=0 # set by confirm
+packagename="" # set by set_package
+
+function set_package() {
+
+	# Get the kernels version number
+	local version="$(uname -r)"
+
+	# Get build number
+	local buildnum="$(uname -a | sed 's/^Linux raspberrypi \([^ ]*\)\s#\([^ ]*\).*/\2/')"
+
+	local package=""
+	if [ "$buildnum" -ge 538 ] ; then
+		local package="$version$buildnum"
+	else
+		local package="$version"
+	fi
+
+	packagename="raspicommrs485-$package"
+
+	echo Package Version is $packagename
+}
+
 
 # prints general information about the script
 function print_info() {
@@ -155,12 +177,15 @@ function install_rs485_driver() {
 	# Update the list of available packages
 	apt-get update
 
+
 	# Install the RasPiComm Rs-485 Device Driver package (use the kernel verison to retrieve the correct package)
-	apt-get install raspicommrs485-$(uname -r)
+	# apt-get install raspicommrs485-$(uname -r)
+	apt-get install $packagename
 }
 
 function remove_rs485_driver() {
-	apt-get remove raspicommrs485-$(uname  -r)
+	# apt-get remove raspicommrs485-$(uname  -r)
+	apt-get remove $packagename
 }
 
 function configure_i2c_support() {
@@ -468,6 +493,7 @@ function print_help() {
 	echo "create-autostart....creates and registers an autostart script that"
 	echo "                    configures the rtc and gpios on startup"
 	echo "remove-autostart....removes the autostart script"
+	echo "get-packagename.....shows the package name for kernel module"
 	echo
 	echo "example: sudo ./rpc_setup.sh --configure-rs232"
 	echo
@@ -535,6 +561,10 @@ function parseArgument() {
 			remove_autostart;
 		;;
 
+		"get-packagename") # get the packagename
+			echo packagename: $packagename
+		;;
+
 		"help"|"h"|"?") # help
 			print_help;
 		;;
@@ -546,6 +576,9 @@ function main() {
 
 	# print some general info about the script
   print_info;
+
+  # sets the package name
+  set_package;
 
   # check if arguments were supplied
   if [[ -z $1 ]]; then
