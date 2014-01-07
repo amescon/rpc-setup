@@ -314,20 +314,29 @@ function remove_all() {
 
 function configure_rtc() {	
 
-	local i2c_device
+	local i2c_base
+
 	if [ $revision == 1 ] ; then
-		i2c_device="/sys/class/i2c-adapter/i2c-0/new_device"
+		i2c_base="/sys/class/i2c-adapter/i2c-0/"
 	else
-		i2c_device="/sys/class/i2c-adapter/i2c-1/new_device"
+		i2c_base="/sys/class/i2c-adapter/i2c-1/"
 	fi
+
+	local i2c_device="${i2c_base}new_device"
 
 	if [ ! -e $i2c_device ]; then
 		echo "i2c support not configured!"
 	else
 
 		echo "configuring real time clock..."
-		# enable rtc clock
-		echo ds1307 0x68 > ${i2c_device}
+
+		# check if the real time clock is already configured
+		if [[ -d "${i2c_base}1-0068" ]]; then
+			echo "i2c device with address 0x68 already configured"
+		else
+			# enable rtc clock
+			echo ds1307 0x68 > ${i2c_device}
+		fi
 
 	fi
 	
