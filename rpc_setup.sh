@@ -582,24 +582,24 @@ function main() {
   	echo "This script must be run as root. Try 'sudo rpc-setup.sh'."
   else
 
-	  # sets the package name
-	  set_package;
+    # sets the package name
+    set_package;
 
-	  # check if arguments were supplied
-	  if [[ -z $1 ]]; then
-		  # enter the main loop
-		  main_repl;
-		else
+    # check if arguments were supplied
+    if [[ -z $1 ]]; then
+      # enter the main loop
+      main_repl;
+    else
 
-			# execute the supplied arguments
-			for arg in "$@"
-			do
-				parseArgument $arg;
-			done
+      # execute the supplied arguments
+      for arg in "$@"
+      do
+        parseArgument $arg;
+      done
 
-		fi
+    fi
 
-	fi
+  fi
 }
 
 main $*; # entrypoint
