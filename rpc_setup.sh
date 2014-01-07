@@ -179,9 +179,24 @@ function install_rs485_driver() {
 	# Update the list of available packages
 	apt-get update -qq
 
+	echo "Trying to install the RasPiComm Rs-485 Device Driver package for your kernel..."
 
 	# Install the RasPiComm Rs-485 Device Driver package (use the kernel version to retrieve the correct package)
 	apt-get install $packagename
+
+	local apt_get_error=$?
+
+	if [[ $apt_get_error -ne 0 ]]; then
+		echo "apt-get returned the error code '$apt_get_error'."
+		echo "Failed to install the Rs-485 Device Driver package for your kernel version."
+		echo "If apt-get couldn't find a package for your kernel version, you have 3 options:"
+		echo "  1) Consider switching to a kernel version for which a rs-485 driver package"
+		echo "     has been built (e.g. 3.10.19+ #600)"
+		echo "  2) Post your kernel version (uname -a) on our forums"
+		echo "     (http://www.amescon.com/forum) and ask for a driver package for your kernel"
+		echo "  3) Download the kernel module source and built the module yourself"
+		echo "     (https://github.com/amescon/raspicomm-module.git)"
+	fi
 }
 
 function remove_rs485_driver() {
