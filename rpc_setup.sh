@@ -174,6 +174,8 @@ function install_rs485_driver() {
 		echo "http://packages.amescon.com is already installed as a package source."
 	fi
 
+	echo "Updating the list of available apt-get packages..."
+
 	# Update the list of available packages
 	apt-get update -qq
 
