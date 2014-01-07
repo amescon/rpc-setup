@@ -399,7 +399,7 @@ function configure_rs232() {
 		fi
 	else
 		local linenumber_patched=`cat "${file2}" | grep -nx "# T0:23:respawn:/sbin/getty -L ttyAMA0 115200 vt100" | sed -n 's/^\([0-9]*\)[:].*/\1/p'`
-		if [ ${linenumber_patched} == 72 ]; then
+		if [[ ${linenumber_patched} == 72 ]]; then
 			echo "ALREADY PATCHED."
 		else
 			echo "UNKNOWN."
