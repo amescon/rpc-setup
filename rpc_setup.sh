@@ -181,7 +181,6 @@ function install_rs485_driver() {
 
 
 	# Install the RasPiComm Rs-485 Device Driver package (use the kernel version to retrieve the correct package)
-	# apt-get install raspicommrs485-$(uname -r)
 	apt-get install $packagename
 }
 
