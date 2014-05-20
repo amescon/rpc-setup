@@ -257,8 +257,8 @@ function create_autostart() {
 	
 	echo "### BEGIN INIT INFO"  >> ${autostart_file}
 	echo "# Provides: rpc"  >> ${autostart_file}
-	echo "# Required-Start:    $remote_fs $syslog" >> ${autostart_file}
-	echo "# Required-Stop:     $local_fs" >> ${autostart_file}
+	echo '# Required-Start:    $remote_fs $syslog' >> ${autostart_file}
+	echo '# Required-Stop:     $local_fs' >> ${autostart_file}
 	echo "# Default-Start:     2 3 4 5" >> ${autostart_file}
 	echo "# Default-Stop:" >> ${autostart_file}
 	echo "# Short-Description: Creates the real time clock i2c device and configures the rpc gpios" >> ${autostart_file}
@@ -272,7 +272,7 @@ function create_autostart() {
 	fi
 
 	# add rtc time -> sys time to autostart file
-	echo "hwclock --hctosys" >> ${autostart_file}
+	echo "sudo hwclock --hctosys" >> ${autostart_file}
 
 	# add joystick gpio configuration to autostart file
 	echo "echo  4 > /sys/class/gpio/export" >> ${autostart_file}
