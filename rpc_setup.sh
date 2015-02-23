@@ -317,6 +317,7 @@ function install_all() {
 	configure_i2c_support;
 	configure_rtc;
 	configure_rs232;
+	disable_devicetree;
 	create_autostart;
 }
 
@@ -325,6 +326,19 @@ function remove_all() {
 	unexport_joystick_gpio;
 	unexport_outputs;
 	remove_autostart;
+}
+
+function disable_devicetree() {
+	# device tree's implementation of irq handling is broken in 3.18.7-v7+ #755 - the kernel deactivates the irq 49 on the raspberry pi 2 if device tree is not disabled
+	# disable devicetree by adding the line 'device_tree=' to the beginning of /boot/config.txt
+	local line=`grep "^device_tree=$" /boot/config.txt`
+	echo -n "checking /boot/config.txt..."
+	if [[ ${line} == "" ]]; then
+		echo "PATCHING FILE"
+		echo "device_tree=" >> /boot/config.txt
+	else
+		echo "ALREADY PATCHED."
+	fi
 }
 
 function configure_rtc() {	
