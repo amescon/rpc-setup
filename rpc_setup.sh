@@ -465,7 +465,7 @@ function print_menu() {
 	echo "----------------------------------"
 	echo "[c]hange revision"
 	echo "[i]nstall"
-	echo "[r]remove"
+	echo "[r]emove"
 	echo "---------------------------------"		
 	echo "[q]uit setup"
 	echo "================================="
