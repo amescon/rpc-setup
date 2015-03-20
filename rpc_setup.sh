@@ -16,7 +16,7 @@ function set_package() {
 	local version="$(uname -r)"
 
 	# Get build number
-	local buildnum="$(uname -a | sed 's/^Linux raspberrypi \([^ ]*\)\s#\([^ ]*\).*/\2/')"
+	local buildnum="$(uname -v | sed 's/^#\([^ ]*\).*/\1/')"
 
 	local package=""
 	if [ "$buildnum" -ge 538 ] ; then
